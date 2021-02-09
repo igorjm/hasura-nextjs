@@ -1,7 +1,24 @@
 import Head from "next/head";
+import { gql, useQuery, useMutation } from "@apollo/client";
+
 import styles from "../styles/Home.module.css";
+import initializeApollo from "../lib/apollo";
+
+const FETCH_USERS = gql`
+  query fetchUsers @cached(ttl: 300) {
+    users {
+      id
+      name
+    }
+  }
+`;
 
 export default function Home({ products }) {
+  const { loading, error, data } = useQuery(FETCH_USERS);
+
+  if (loading) {
+  }
+
   return (
     <div className={styles.container}>
       <Head>
@@ -21,6 +38,16 @@ export default function Home({ products }) {
             </li>
           ))}
         </ul>
+
+        {loading ? <div>Loading...</div> : null}
+        {error ? <div>Error...</div> : null}
+        {data && data.users
+          ? data.users.map((user) => {
+              return <div key={user.id}>{user.name}</div>;
+            })
+          : null}
+
+        <button onSubmit={}>Click me</button>
       </main>
 
       <footer className={styles.footer}>
@@ -38,6 +65,7 @@ export default function Home({ products }) {
 }
 
 export async function getStaticProps(context) {
+  /*
   const options = {
     method: "POST",
     body: JSON.stringify({
@@ -57,10 +85,24 @@ export async function getStaticProps(context) {
   );
   const responseJson = await fetchResponse.json();
   const products = responseJson.data.product;
+  */
+
+  const client = initializeApollo();
+  const { data } = await client.query({
+    query: gql`
+      query fetchProducts {
+        product {
+          id
+          title
+          price
+        }
+      }
+    `,
+  });
 
   return {
     props: {
-      products: products,
+      products: data.product,
     },
   };
 }
